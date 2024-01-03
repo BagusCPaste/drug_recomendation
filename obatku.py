@@ -4,19 +4,20 @@ from PIL import Image
 
 # Load data rekomendasi yang sudah ada
 data = pd.read_csv('recommendation_data.csv')
+kolom_tampil = ['drugName', 'condition', 'review', 'recommendation_score']
 
 # Cetak info tentang struktur data
-st.write("Info Struktur Data:")
-st.write(data.info())
+st.header("Rekomendasi Obat Berdasarkan Review")
 
 # Cetak 5 baris pertama dari data
-st.write("Lima Baris Pertama dari Data:")
-st.write(data.head())
+st.write("Rekomendasi obat diberikan sesuai dengan hasil review yang ada dan direkomendasikan berdasarkan seberapa sering obat tersebut dikonsumsi.")
+st.write(data[kolom_tampil].head())
+st.write('---')
 
 
 def recommend(keyword):
     # Cetak data untuk memastikan kita mendapatkan kata kunci yang benar
-    st.write("Data untuk Kata Kunci:", keyword)
+    st.write("Masukkan kondisi penyakit anda", keyword)
 
     # Pisahkan kata kunci menjadi list
     keywords = keyword.lower().split()
@@ -25,7 +26,7 @@ def recommend(keyword):
     selected_data = data[data['condition'].str.lower(
     ).str.contains('|'.join(keywords))]
 
-    st.write(selected_data)
+    # st.write(selected_data)
 
     select = selected_data
     drug_count = select['drugName'].nunique()
@@ -37,7 +38,7 @@ def recommend(keyword):
     drug_score = dict(group_drug)
     recommendations = list(drug_score.keys())[:5] if len(
         drug_score) > 5 else list(drug_score.keys())
-    return recommendations
+    return recommendations, selected_data
 
 
 # Tampilan aplikasi Streamlit
@@ -64,18 +65,20 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-if st.button("Rekomendasi"):
+if st.button("Cari Rekomendasi"):
     # Panggil fungsi rekomendasi
-    recommendations = recommend(user_keyword)
+    recommendations, selected_data = recommend(user_keyword)
 
     # Tampilkan hasil rekomendasi
     st.markdown(
         f"<div style='border: 2px solid #DC143C; padding: 10px; border-radius: 10px; background-color: #FFE4E1; color: #DC143C;'>"
-        f"<h3>Rekomendasi 5 Obat Terbaik untuk Kata Kunci {user_keyword.upper()}:</h3>"
-        f"1. {recommendations[0]}<br>"
-        f"2. {recommendations[1]}<br>"
-        f"3. {recommendations[2]}<br>"
-        f"4. {recommendations[3]}<br>"
-        f"5. {recommendations[4]}<br>"
+        f"<h3>Rekomendasi 5 Obat untuk kondisi {user_keyword.upper()}</h3>"
+        f"1. {recommendations[0].capitalize()}<br>"
+        f"2. {recommendations[1].capitalize()}<br>"
+        f"3. {recommendations[2].capitalize()}<br>"
+        f"4. {recommendations[3].capitalize()}<br>"
+        f"5. {recommendations[4].capitalize()}<br>"
         f"</div>", unsafe_allow_html=True
     )
+
+    st.write(selected_data[kolom_tampil])
