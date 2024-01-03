@@ -11,7 +11,8 @@ st.header("Rekomendasi Obat Berdasarkan Review")
 
 # Cetak 5 baris pertama dari data
 st.write("Rekomendasi obat diberikan sesuai dengan hasil review yang ada dan direkomendasikan berdasarkan seberapa sering obat tersebut dikonsumsi.")
-st.write(data[kolom_tampil].head())
+st.write(data[kolom_tampil].sort_values(
+    by='recommendation_score', ascending=False))
 st.write('---')
 
 
@@ -38,6 +39,7 @@ def recommend(keyword):
     drug_score = dict(group_drug)
     recommendations = list(drug_score.keys())[:5] if len(
         drug_score) > 5 else list(drug_score.keys())
+
     return recommendations, selected_data
 
 
@@ -81,4 +83,5 @@ if st.button("Cari Rekomendasi"):
         f"</div>", unsafe_allow_html=True
     )
 
-    st.write(selected_data[kolom_tampil])
+    st.write(selected_data[kolom_tampil].sort_values(
+        by='recommendation_score', ascending=False))
