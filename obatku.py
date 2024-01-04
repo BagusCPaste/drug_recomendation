@@ -1,10 +1,18 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from PIL import Image
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import regex as re
 
 # Load data rekomendasi yang sudah ada
 data = pd.read_csv('recommendation_data.csv')
-kolom_tampil = ['drugName', 'condition', 'review', 'recommendation_score']
+
+vectorizer = TfidfVectorizer()
+X_new = vectorizer.fit_transform([x.lower() for x in data['full_konteks']])
+
+kolom_tampil = ['drugName', 'condition', 'review', 'recommendation_score','full_konteks']
 
 # Cetak info tentang struktur data
 st.header("Rekomendasi Obat Berdasarkan Review")
@@ -16,20 +24,33 @@ st.write(data[kolom_tampil].sort_values(
 st.write('---')
 
 
+def searching(word):
+    word = re.sub('[^a-zA-Z0-9 ]','', word.lower()) # match everyting that's not alphabet and digit and remove it
+    query_vec = vectorizer.transform([word])
+    similarity = cosine_similarity(query_vec, X_new).flatten()
+    
+    filtered = np.where(similarity != 0)[0]
+    indices = np.argsort(-similarity[filtered])
+    correct_indices = filtered[indices]
+    result = data.iloc[correct_indices]
+    
+    if not len(result):
+        return 'Result not found'
+    
+    overall =  result['recommendation_score'] *  similarity[correct_indices] 
+    
+    return result.loc[overall.sort_values(ascending=False).index]
+
+
+
 def recommend(keyword):
     # Cetak data untuk memastikan kita mendapatkan kata kunci yang benar
     st.write("Masukkan kondisi penyakit anda", keyword)
-
-    # Pisahkan kata kunci menjadi list
-    keywords = keyword.lower().split()
-
-    # Filter data berdasarkan kata kunci
-    selected_data = data[data['condition'].str.lower(
-    ).str.contains('|'.join(keywords))]
-
+    
+    data = searching(keyword)
     # st.write(selected_data)
 
-    select = selected_data
+    select = data
     drug_count = select['drugName'].nunique()
     select['recommendation_score'] = select['recommendation_score'] / drug_count
     group_drug = select.groupby(['drugName']).agg(
@@ -40,7 +61,7 @@ def recommend(keyword):
     recommendations = list(drug_score.keys())[:5] if len(
         drug_score) > 5 else list(drug_score.keys())
 
-    return recommendations, selected_data
+    return recommendations, data
 
 
 # Tampilan aplikasi Streamlit
@@ -74,7 +95,7 @@ if st.button("Cari Rekomendasi"):
     # Tampilkan hasil rekomendasi
     st.markdown(
         f"<div style='border: 2px solid #DC143C; padding: 10px; border-radius: 10px; background-color: #FFE4E1; color: #DC143C;'>"
-        f"<h3>Rekomendasi 5 Obat untuk kondisi {user_keyword.upper()}</h3>"
+        f"<h3>rekomendasi 5 obat untuk keluhan anda '{user_keyword}'</h3>"
         f"1. {recommendations[0].capitalize()}<br>"
         f"2. {recommendations[1].capitalize()}<br>"
         f"3. {recommendations[2].capitalize()}<br>"
