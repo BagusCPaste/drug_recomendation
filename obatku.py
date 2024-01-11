@@ -12,7 +12,8 @@ data = pd.read_csv('recommendation_data.csv')
 vectorizer = TfidfVectorizer()
 X_new = vectorizer.fit_transform([x.lower() for x in data['full_konteks']])
 
-kolom_tampil = ['drugName', 'condition', 'review', 'recommendation_score','full_konteks']
+kolom_tampil = ['drugName', 'condition', 'review',
+                'recommendation_score']
 
 # Cetak info tentang struktur data
 st.header("Rekomendasi Obat Berdasarkan Review")
@@ -25,28 +26,28 @@ st.write('---')
 
 
 def searching(word):
-    word = re.sub('[^a-zA-Z0-9 ]','', word.lower()) # match everyting that's not alphabet and digit and remove it
+    # match everyting that's not alphabet and digit and remove it
+    word = re.sub('[^a-zA-Z0-9 ]', '', word.lower())
     query_vec = vectorizer.transform([word])
     similarity = cosine_similarity(query_vec, X_new).flatten()
-    
+
     filtered = np.where(similarity != 0)[0]
     indices = np.argsort(-similarity[filtered])
     correct_indices = filtered[indices]
     result = data.iloc[correct_indices]
-    
+
     if not len(result):
         return 'Result not found'
-    
-    overall =  result['recommendation_score'] *  similarity[correct_indices] 
-    
-    return result.loc[overall.sort_values(ascending=False).index]
 
+    overall = result['recommendation_score'] * similarity[correct_indices]
+
+    return result.loc[overall.sort_values(ascending=False).index]
 
 
 def recommend(keyword):
     # Cetak data untuk memastikan kita mendapatkan kata kunci yang benar
     st.write("Masukkan kondisi penyakit anda", keyword)
-    
+
     data = searching(keyword)
     # st.write(selected_data)
 
@@ -95,7 +96,7 @@ if st.button("Cari Rekomendasi"):
     # Tampilkan hasil rekomendasi
     st.markdown(
         f"<div style='border: 2px solid #DC143C; padding: 10px; border-radius: 10px; background-color: #FFE4E1; color: #DC143C;'>"
-        f"<h3>rekomendasi 5 obat untuk keluhan anda '{user_keyword}'</h3>"
+        f"<h3>Rekomendasi 5 obat untuk keluhan anda : </h3>"
         f"1. {recommendations[0].capitalize()}<br>"
         f"2. {recommendations[1].capitalize()}<br>"
         f"3. {recommendations[2].capitalize()}<br>"
